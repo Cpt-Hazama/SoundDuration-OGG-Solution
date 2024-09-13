@@ -32,8 +32,7 @@ local function OGGParse(sndPath)
 
     for i = 1,size -14 do
         if t[i] == string_byte("v") && t[i +1] == string_byte("o") && t[i +2] == string_byte("r") && t[i +3] == string_byte("b") && t[i +4] == string_byte("i") && t[i +5] == string_byte("s") then
-            local rate_bytes = {t[i +11], t[i +12], t[i +13], t[i +14]}
-            rate = bytesToIntLE(rate_bytes)
+            rate = bytesToIntLE({t[i +11], t[i +12], t[i +13], t[i +14]})
             -- print("Sample Rate: " .. rate)
             break
         end
