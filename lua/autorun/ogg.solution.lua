@@ -1,55 +1,56 @@
-local function bytesToIntLE(bytes)
-    return bytes[1] +(bytes[2] *256) +(bytes[3] *256^2) +(bytes[4] *256^3)
+local function readBytes(file,pos,count)
+    file:Seek(pos)
+    return {file:Read(count):byte(1,count)}
 end
 
-local string_byte = string.byte
+local oggCache = {}
 local file_Open = file.Open
-local function OGGParse(sndPath)
+local math_min = math.min
+local function OGGSoundDuration(sndPath)
     local file = file_Open("sound/" .. sndPath, "rb", "GAME")
-    if !file then
-        -- print("Error: Could not open file " .. sndPath)
-        return nil
-    end
+    if !file then return nil end
 
     local size = file:Size()
-    local t = {}
-    for i = 1, size do
-        t[i] = file:ReadByte()
+    local head = file:Read(math_min(2048,size))
+    local rate = -1
+    for i = 1,#head -14 do
+        if head:sub(i,i +5) == "vorbis" then
+            local b = {head:byte(i +11,i +14)}
+            rate = b[1] +b[2] *256 +b[3] *256^2 +b[4] *256^3
+            break
+        end
     end
-    file:Close()
 
     local length = -1
-    local rate = -1
-    for i = size -15, 1, -1 do
-        if t[i] == string_byte("O") && t[i +1] == string_byte("g") && t[i +2] == string_byte("g") && t[i +3] == string_byte("S") then
-            length = t[i +6] +t[i +7] *256 +t[i +8] *256^2 +t[i +9] *256^3
-            -- print("Granule Position (length): " .. length)
+    local tailReadSize = math_min(32768,size)
+    file:Seek(size -tailReadSize)
+    local tail = file:Read(tailReadSize)
+    for i = #tail -15,1,-1 do
+        if tail:sub(i,i +3) == "OggS" then
+            local b = {tail:byte(i +6,i +9)}
+            length = b[1] +b[2] *256 +b[3] *256^2 +b[4] *256^3
             break
         end
     end
 
-    for i = 1,size -14 do
-        if t[i] == string_byte("v") && t[i +1] == string_byte("o") && t[i +2] == string_byte("r") && t[i +3] == string_byte("b") && t[i +4] == string_byte("i") && t[i +5] == string_byte("s") then
-            rate = bytesToIntLE({t[i +11], t[i +12], t[i +13], t[i +14]})
-            -- print("Sample Rate: " .. rate)
-            break
-        end
-    end
+    file:Close()
 
     if length > 0 && rate > 0 then
-        return length /rate
+		local dur = length /rate
+		oggCache[sndPath] = dur
+		print("Sound: " .. sndPath .. " | Duration: " .. dur .. " seconds")
+        return dur
     end
-
-    -- print("Error: Could not determine OGG file duration.")
     return nil
 end
 
+local oldSoundDuration = SoundDuration
 local string_EndsWith = string.EndsWith
 local string_lower = string.lower
-local oldSoundDuration = SoundDuration
 function SoundDuration(sndPath)
+	if oggCache[sndPath] then return oggCache[sndPath] end
     if string_EndsWith(string_lower(sndPath), ".ogg") then
-        return OGGParse(sndPath)
+        return OGGSoundDuration(sndPath)
     end
     return oldSoundDuration(sndPath)
 end
