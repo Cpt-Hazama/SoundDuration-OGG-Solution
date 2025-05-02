@@ -53,6 +53,7 @@ function SoundDuration(sndPath)
     if string_EndsWith(string_lower(sndPath), ".ogg") then
         if string_StartsWith(sndPath, "^") or string_StartsWith(sndPath, "#") then
             sndPath = sndPath:sub(2)
+            if oggCache[sndPath] then return oggCache[sndPath] end
         end
         return OGGSoundDuration(sndPath)
     end
