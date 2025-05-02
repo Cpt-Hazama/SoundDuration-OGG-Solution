@@ -45,11 +45,15 @@ local function OGGSoundDuration(sndPath)
 end
 
 local oldSoundDuration = SoundDuration
+local string_StartsWith = string.StartsWith
 local string_EndsWith = string.EndsWith
 local string_lower = string.lower
 function SoundDuration(sndPath)
 	if oggCache[sndPath] then return oggCache[sndPath] end
     if string_EndsWith(string_lower(sndPath), ".ogg") then
+        if string_StartsWith(sndPath, "^") or string_StartsWith(sndPath, "#") then
+            sndPath = sndPath:sub(2)
+        end
         return OGGSoundDuration(sndPath)
     end
     return oldSoundDuration(sndPath)
