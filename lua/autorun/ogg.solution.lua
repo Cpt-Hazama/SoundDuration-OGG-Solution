@@ -8,7 +8,7 @@ local file_Open = file.Open
 local math_min = math.min
 local function OGGSoundDuration(sndPath)
     local file = file_Open("sound/" .. sndPath, "rb", "GAME")
-    if !file then return nil end
+    if !file then return 0 end
 
     local size = file:Size()
     local head = file:Read(math_min(2048,size))
@@ -41,7 +41,7 @@ local function OGGSoundDuration(sndPath)
 		print("Sound: " .. sndPath .. " | Duration: " .. dur .. " seconds")
         return dur
     end
-    return nil
+    return 0
 end
 
 local oldSoundDuration = SoundDuration
@@ -49,6 +49,7 @@ local string_StartsWith = string.StartsWith
 local string_EndsWith = string.EndsWith
 local string_lower = string.lower
 function SoundDuration(sndPath)
+    if !sndPath then return 0 end
 	if oggCache[sndPath] then return oggCache[sndPath] end
     if string_EndsWith(string_lower(sndPath), ".ogg") then
         if string_StartsWith(sndPath, "^") or string_StartsWith(sndPath, "#") then
